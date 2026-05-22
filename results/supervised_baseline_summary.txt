@@ -1,0 +1,21 @@
+Task 1: Supervised Baseline Results
+=====================================
+Training Configuration:
+- Dataset: CIFAR-10 (10% labeled split)
+- Model: ResNet-18 (modified for CIFAR-10)
+- Optimizer: Adam
+- Learning Rate: 0.0003
+- Batch Size: 64
+- Number of Epochs: 100
+- Random Seed: 2026
+
+Training Summary:
+- Train Samples: 5000
+- Validation Samples: 5000
+- Test Samples: 10000
+- Best Validation Accuracy: 0.7612 (at epoch 88)
+
+Test Results:
+- Test Accuracy: 0.7678
+- Confusion Matrix saved to: results/supervised_confusion_matrix.png
+- Loss curves saved to: graphs/supervised_loss.png

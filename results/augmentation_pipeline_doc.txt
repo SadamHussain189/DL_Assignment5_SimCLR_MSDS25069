@@ -1,0 +1,54 @@
+Task 2: Understanding Augmentations (8 Marks)
+============================================
+
+AUGMENTATION PIPELINE FOR SimCLR:
+
+The following augmentations are applied independently to create two different views
+of the same image. This is KEY to SimCLR - the model learns that these different views
+are "positive pairs" without using any labels!
+
+Augmentations Applied:
+----------------------
+1. RandomResizedCrop(32, scale=(0.2, 1.0))
+   - Randomly crop and resize image to different scales
+   - Scale: between 20% and 100% of original
+
+2. RandomHorizontalFlip(p=0.5)
+   - 50% chance to flip image horizontally
+
+3. ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)
+   - brightness: ±40%
+   - contrast: ±40%
+   - saturation: ±40%
+   - hue: ±10%
+
+4. RandomGrayscale(p=0.2)
+   - 20% chance to convert to grayscale
+
+TwoViewTransform Implementation:
+-------------------------------
+class TwoViewTransform:
+    def __init__(self, transform):
+        self.transform = transform
+    
+    def __call__(self, x):
+        view1 = self.transform(x)
+        view2 = self.transform(x)
+        return view1, view2
+
+Why This Works:
+---------------
+- Same image, same pipeline → different results due to randomness
+- Both views contain the SAME semantic information
+- But they LOOK different due to augmentations
+- SimCLR learns: "Different looking images with same semantic content = positive pair"
+
+This enables self-supervised learning! The model doesn't need labels to learn
+useful representations.
+
+Deliverable:
+------------
+✓ results/augmentation_examples.png
+  - 10 diverse CIFAR-10 images
+  - Each row: [Original | Aug View 1 | Aug View 2]
+  - Shows the augmentation diversity and effectiveness
