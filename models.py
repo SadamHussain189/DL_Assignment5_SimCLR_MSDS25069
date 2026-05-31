@@ -55,8 +55,29 @@ class SupervisedModel(nn.Module):
         return self.backbone(x)
 
 
+class ResNet18Encoder(nn.Module):
+    """ResNet-18 encoder for feature extraction (returns 512-dim features)."""
+    
+    def __init__(self):
+        super().__init__()
+        self.backbone = create_resnet18_cifar10(num_classes=10)
+        # Remove FC layer to use encoder only
+        self.backbone.fc = nn.Identity()
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass.
+        
+        Args:
+            x: Input tensor of shape (batch_size, 3, 32, 32).
+            
+        Returns:
+            Features of shape (batch_size, 512).
+        """
+        return self.backbone(x)
+
+
 class SimCLREncoder(nn.Module):
-    """ResNet-18 encoder for SimCLR (feature extractor)."""
+    """ResNet-18 encoder for SimCLR (feature extractor) - alias for ResNet18Encoder."""
     
     def __init__(self):
         super().__init__()

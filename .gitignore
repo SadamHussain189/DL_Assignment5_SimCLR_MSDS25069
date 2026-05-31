@@ -10,3 +10,8 @@
 *.tar.gz
 *.h5
 *.ckpt
+*.pyc
+__pycache__/
+logs/
+results/
+models/
