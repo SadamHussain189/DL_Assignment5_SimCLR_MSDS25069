@@ -3,3 +3,10 @@
 *.jpg
 *.jpeg
 *.pth
+*.log
+*.csv
+*.json
+*.zip
+*.tar.gz
+*.h5
+*.ckpt
