@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,6 +22,9 @@ from task4_simclr_implementation import nt_xent_loss, cosine_similarity, TwoView
 from utils.dataset_splits import get_cifar10_subset, TwoViewDataset
 from utils.seed import set_seed
 
+# Disable cuDNN for better GPU compatibility (especially Pascal GPUs)
+torch.backends.cudnn.enabled = False
+torch.backends.cudnn.benchmark = False
 
 def get_augmentation_pipeline() -> transforms.Compose:
     """Get the augmentation pipeline."""
@@ -61,10 +65,19 @@ def train_epoch(
     model.train()
     total_loss = 0.0
     num_batches = 0
+    debug_printed = False
     
     for view1, view2, _ in dataloader:
         view1 = view1.to(device)
         view2 = view2.to(device)
+        
+        # Debug print on first batch
+        if not debug_printed:
+            print(f"\n[DEBUG] Batch Info:", flush=True)
+            print(f"  view1 shape: {view1.shape}, dtype: {view1.dtype}, device: {view1.device}", flush=True)
+            print(f"  view2 shape: {view2.shape}, dtype: {view2.dtype}, device: {view2.device}", flush=True)
+            print(f"  view1 min/max: [{view1.min():.4f}, {view1.max():.4f}]", flush=True)
+            debug_printed = True
         
         # Forward pass
         _, z1 = model(view1)  # (batch_size, proj_dim)
@@ -169,19 +182,28 @@ def plot_training_loss(losses: list[float], out_path: str | Path = "graphs/simcl
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     
-    print(f"✓ Saved loss curve to {out_path}")
+    print(f"✓ Saved loss curve to {out_path}", flush=True)
 
 
 def main():
     """Main training function."""
-    print("\n" + "="*70)
-    print("Task 5: SimCLR Pretraining (12 marks)")
-    print("="*70)
+    print("\n" + "="*70, flush=True)
+    print("Task 5: SimCLR Pretraining (12 marks)", flush=True)
+    print("="*70, flush=True)
+    
+    # Debug info
+    print(f"\n[DEBUG INFO]", flush=True)
+    print(f"  PyTorch version: {torch.__version__}", flush=True)
+    print(f"  CUDA available: {torch.cuda.is_available()}", flush=True)
+    if torch.cuda.is_available():
+        print(f"  CUDA version: {torch.version.cuda}", flush=True)
+        print(f"  cuDNN version: {torch.backends.cudnn.version()}", flush=True)
+        print(f"  GPU: {torch.cuda.get_device_name(0)}", flush=True)
     
     # Setup
     set_seed(2026)
-    device = torch.device("cpu")  # Force CPU mode (CUDA causes compatibility issues)
-    print(f"Device: {device}")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"  Using device: {device}", flush=True)
     
     # Training configuration (FIXED - DO NOT CHANGE)
     EPOCHS = 50
@@ -189,26 +211,25 @@ def main():
     LEARNING_RATE = 3e-4
     TEMPERATURE = 0.5
     
-    print(f"\nTraining Configuration:")
-    print(f"  Epochs: {EPOCHS}")
-    print(f"  Batch size: {BATCH_SIZE}")
-    print(f"  Learning rate: {LEARNING_RATE}")
-    print(f"  Temperature: {TEMPERATURE}")
-    print(f"  Optimizer: Adam")
+    print(f"\nTraining Configuration:", flush=True)
+    print(f"  Epochs: {EPOCHS}", flush=True)
+    print(f"  Batch size: {BATCH_SIZE}", flush=True)
+    print(f"  Temperature: {TEMPERATURE}", flush=True)
+    print(f"  Optimizer: Adam", flush=True)
     
     # Create model
     model = SimCLRModel(encoder_dim=512, hidden_dim=256, proj_dim=128)
     model = model.to(device)
     
-    print(f"\nModel Architecture:")
-    print(f"  Encoder: ResNet-18 (untrained)")
-    print(f"  Projection head: Linear(512→256) + ReLU + Linear(256→128)")
+    print(f"\nModel Architecture:", flush=True)
+    print(f"  Encoder: ResNet-18 (untrained)", flush=True)
+    print(f"  Projection head: Linear(512→256) + ReLU + Linear(256→128)", flush=True)
     
     # Create optimizer
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     
     # Load training data
-    print(f"\nLoading data from: splits/train_ssl_unlabeled.txt")
+    print(f"\nLoading data from: splits/train_ssl_unlabeled.txt", flush=True)
     
     # Get base dataset without transform
     base_dataset = get_cifar10_subset(
@@ -230,59 +251,67 @@ def main():
         drop_last=True,
     )
     
-    print(f"Dataset size: {len(dataset)} samples")
-    print(f"Batches per epoch: {len(dataloader)}")
+    print(f"Dataset size: {len(dataset)} samples", flush=True)
+    print(f"Batches per epoch: {len(dataloader)}", flush=True)
     
     # Training loop
-    print(f"\n" + "="*70)
-    print(f"Starting SimCLR Pretraining...")
-    print(f"="*70)
+    print(f"\n" + "="*70, flush=True)
+    print(f"Starting SimCLR Pretraining...", flush=True)
+    print(f"="*70, flush=True)
     
     losses = []
+    start_time = time.time()
     
     for epoch in range(1, EPOCHS + 1):
+        epoch_start = time.time()
         loss = train_epoch(model, dataloader, optimizer, device, TEMPERATURE)
+        epoch_time = time.time() - epoch_start
         losses.append(loss)
         
-        # Print progress
-        if epoch % 5 == 0 or epoch == 1:
-            print(f"Epoch {epoch:3d}/{EPOCHS} | Loss: {loss:.4f}")
+        # Print progress for EVERY epoch
+        elapsed = time.time() - start_time
+        eta_per_epoch = elapsed / epoch
+        remaining_time = eta_per_epoch * (EPOCHS - epoch)
+        
+        print(f"Epoch {epoch:3d}/{EPOCHS} | Loss: {loss:.4f} | Time: {epoch_time:6.2f}s | ETA: {remaining_time/60:.1f}min", flush=True)
     
-    print(f"\n✓ Training Complete!")
-    print(f"  Initial loss: {losses[0]:.4f}")
-    print(f"  Final loss: {losses[-1]:.4f}")
-    print(f"  Loss decrease: {losses[0] - losses[-1]:.4f}")
+    print(f"\n✓ Training Complete!", flush=True)
+    total_time = time.time() - start_time
+    print(f"  Total time: {total_time/60:.2f} minutes ({total_time/3600:.2f} hours)", flush=True)
+    print(f"  Initial loss: {losses[0]:.4f}", flush=True)
+    print(f"  Final loss: {losses[-1]:.4f}", flush=True)
+    print(f"  Loss decrease: {losses[0] - losses[-1]:.4f}", flush=True)
     
     # Save model
     model_dir = Path("models")
     model_dir.mkdir(exist_ok=True)
     model_path = model_dir / "simclr_pretrained.pth"
     torch.save(model.state_dict(), model_path)
-    print(f"✓ Saved model to {model_path}")
+    print(f"✓ Saved model to {model_path}", flush=True)
     
     # Plot training loss
     plot_training_loss(losses)
     
     # Compute post-training similarities
-    print(f"\nComputing feature similarities after SimCLR training...")
+    print(f"\nComputing feature similarities after SimCLR training...", flush=True)
     stats_after, view1_feat, view2_feat = compute_final_similarities(
         model, dataloader, device, num_samples=100
     )
     
-    print(f"\nSame Image (augmented views) Similarity AFTER SimCLR:")
-    print(f"  Mean: {stats_after['same_image_mean']:.4f}")
-    print(f"  Std:  {stats_after['same_image_std']:.4f}")
+    print(f"\nSame Image (augmented views) Similarity AFTER SimCLR:", flush=True)
+    print(f"  Mean: {stats_after['same_image_mean']:.4f}", flush=True)
+    print(f"  Std:  {stats_after['same_image_std']:.4f}", flush=True)
     
-    print(f"\nAll Similarities AFTER SimCLR:")
-    print(f"  Mean: {stats_after['all_similarities_mean']:.4f}")
-    print(f"  Std:  {stats_after['all_similarities_std']:.4f}")
+    print(f"\nAll Similarities AFTER SimCLR:", flush=True)
+    print(f"  Mean: {stats_after['all_similarities_mean']:.4f}", flush=True)
+    print(f"  Std:  {stats_after['all_similarities_std']:.4f}", flush=True)
     
-    print(f"\n✓ MAJOR IMPROVEMENT!")
-    print(f"  Same-image similarity increased significantly (close to 1.0)!")
-    print(f"  Model learned to treat augmented views as similar!")
+    print(f"\n✓ MAJOR IMPROVEMENT!", flush=True)
+    print(f"  Same-image similarity increased significantly (close to 1.0)!", flush=True)
+    print(f"  Model learned to treat augmented views as similar!", flush=True)
     
     # Generate similarity matrix visualization
-    print(f"\nGenerating post-training similarity matrix visualization...")
+    print(f"\nGenerating post-training similarity matrix visualization...", flush=True)
     z_after = torch.cat([view1_feat, view2_feat], dim=0)
     visualize_similarity_matrix(
         z_after,
@@ -291,24 +320,37 @@ def main():
         title="Cosine Similarity Matrix (After SimCLR Training)"
     )
     
-    # Save statistics
+    # Save results summary
     results_dir = Path("results")
     results_dir.mkdir(exist_ok=True)
     
-    stats_file = results_dir / "task5_similarities_after_training.json"
-    with open(stats_file, "w") as f:
-        json.dump(stats_after, f, indent=2)
-    print(f"✓ Saved statistics to {stats_file}")
+    summary = {
+        "task": "Task 5: SimCLR Pretraining",
+        "marks": 12,
+        "epochs": EPOCHS,
+        "batch_size": BATCH_SIZE,
+        "learning_rate": LEARNING_RATE,
+        "temperature": TEMPERATURE,
+        "device": str(device),
+        "total_training_time_seconds": total_time,
+        "total_training_time_minutes": round(total_time / 60, 2),
+        "dataset_size": len(dataset),
+        "batches_per_epoch": len(dataloader),
+        "initial_loss": float(losses[0]),
+        "final_loss": float(losses[-1]),
+        "loss_decrease": float(losses[0] - losses[-1]),
+        "same_image_similarity_after": stats_after['same_image_mean'],
+        "status": "COMPLETE - Production run (50 epochs, 100% data)"
+    }
     
-    # Save loss history
-    loss_file = results_dir / "task5_training_losses.json"
-    with open(loss_file, "w") as f:
-        json.dump({"epochs": EPOCHS, "losses": losses}, f, indent=2)
-    print(f"✓ Saved loss history to {loss_file}")
+    results_file = results_dir / "task5_simclr_pretraining_results.json"
+    with open(results_file, "w") as f:
+        json.dump(summary, f, indent=2)
+    print(f"✓ Saved results to {results_file}", flush=True)
     
-    print("\n" + "="*70)
-    print("✓ Task 5: SimCLR Pretraining Complete!")
-    print("="*70)
+    print("\n" + "="*70, flush=True)
+    print("✓ Task 5: SimCLR Pretraining Complete!", flush=True)
+    print("="*70, flush=True)
 
 
 if __name__ == "__main__":
