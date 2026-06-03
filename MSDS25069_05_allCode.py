@@ -669,7 +669,11 @@ def run_task7_8(sup_acc=0.0, rand_lp=0.0, simclr_lp=0.0, sim_before=None, sim_af
 
     def do_tsne_plot(feats, labs, title, path):
         coords = TSNE(n_components=2, random_state=SEED, perplexity=30,
+<<<<<<< HEAD
                        max_iter=1000, init="pca", learning_rate="auto").fit_transform(feats)
+=======
+                       n_iter=1000, init="pca", learning_rate="auto").fit_transform(feats)
+>>>>>>> 1b6c423eef62d900697a458e482f9fd07715e606
         fig, ax = plt.subplots(figsize=(10, 8))
         cmap = plt.cm.tab10(np.linspace(0, 1, 10))
         for c in range(10):

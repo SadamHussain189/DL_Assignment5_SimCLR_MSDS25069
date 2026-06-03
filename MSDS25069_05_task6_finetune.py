@@ -189,7 +189,11 @@ def plot_features_2d(features, labels, title, out_path, method="tsne"):
 
     if method == "tsne":
         reducer = TSNE(n_components=2, random_state=SEED, perplexity=30,
+<<<<<<< HEAD
                        max_iter=1000, init="pca", learning_rate="auto")
+=======
+                       n_iter=1000, init="pca", learning_rate="auto")
+>>>>>>> 1b6c423eef62d900697a458e482f9fd07715e606
         coords = reducer.fit_transform(features)
         axis_label = ("t-SNE 1", "t-SNE 2")
     else:
