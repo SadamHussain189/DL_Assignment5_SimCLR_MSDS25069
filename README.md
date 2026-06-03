@@ -1,128 +1,115 @@
 # DL_Assignment5_SimCLR_MSDS25069
 
-Deep Learning Assignment 5: SimCLR Implementation
+**Deep Learning - Spring 2026 | Assignment 5: SimCLR**
 
-**Student:** Sadam Hussain (MSDS25069)  
-**Course:** Deep Learning - Spring 2026  
-
----
-
-## ✅ Assignment Completion Status
-
-**Overall: 100/100 marks (100%) COMPLETE** ✅
-
-| Checkpoint | Tasks | Marks | Status |
-|-----------|-------|-------|--------|
-| Day 3 | Task 0-2 | 28/28 | ✅ Complete |
-| Day 6 | Task 3-6 | 54/54 | ✅ Complete |
-| Day 9 | Task 7-8 | 16/16 | ✅ Complete |
-| Day 12 | Report | 2/2 | ✅ Complete |
-| **TOTAL** | **0-8** | **100/100** | **✅ COMPLETE** |
+**Student:** Sadam Hussain (MSDS25069)
+**Random Seed:** 2026
 
 ---
 
-## 📋 Tasks Overview
+## Setup
 
-| Task | Title | Marks | Status |
-|------|-------|-------|--------|
-| 0 | Conceptual Warm-up | 8 | ✅ |
-| 1 | Supervised Baseline (10% labels) | 12 | ✅ |
-| 2 | Augmentation Pipeline | 8 | ✅ |
-| 3 | Feature Similarity Before Training | 8 | ✅ |
-| 4 | SimCLR Implementation | 24 | ✅ |
-| 5 | SimCLR Pretraining | 12 | ✅ |
-| 6 | Linear Probe Evaluation | 10 | ✅ |
-| 7 | Fine-tuning Strategies | 8 | ✅ |
-| 8 | PCA/t-SNE Visualization | 5 | ✅ |
-| Report & Viva | - | 5 | ✅ |
-
-**Results:**
-- **Test Accuracy:** 59.00%
-- **Deliverables:** Loss curves, confusion matrix, model checkpoint
-
----
-
-## 📁 File Structure
-
-```
-models.py                    # ResNet-18 model architecture
-task1_supervised_baseline.py # Task 1: Supervised baseline
-task2_augmentations_fast.py  # Task 2: Augmentation pipeline  
-task3_feature_similarity.py  # Task 3: Feature similarity
-task4_simclr_implementation.py # Task 4: SimCLR loss & pairs
-task5_simclr_pretraining.py  # Task 5: SimCLR pretraining
-task6_linear_probe.py        # Task 6: Linear probe
-task7_finetuning.py          # Task 7: Fine-tuning
-task8_visualization.py       # Task 8: PCA/t-SNE viz
-
-graphs/                      # Output visualizations
-results/                     # JSON results and metrics
-models/                      # Model checkpoints
-data/                        # CIFAR-10 dataset
-splits/                      # Train/val/test splits
-utils/                       # Dataset/metrics utilities
-```
-
----
-
-## 🚀 Setup & Execution
-
-**Prerequisites:**
 ```bash
-pip install torch torchvision numpy matplotlib scikit-learn
+pip install -r requirements.txt
 ```
 
-**Run all tasks:**
+CIFAR-10 will be auto-downloaded on first run.
+
+---
+
+## How to Run (execute in order)
+
 ```bash
-python task1_supervised_baseline.py   # Task 1: Supervised baseline (test acc: 59.00%)
-python task2_augmentations_fast.py    # Task 2: Augmentation examples
-python task3_feature_similarity.py    # Task 3: Feature similarity
-python task4_simclr_implementation.py # Task 4: SimCLR implementation
-python task5_simclr_pretraining.py    # Task 5: SimCLR pretraining
-python task6_linear_probe.py          # Task 6: Linear probe (SimCLR: 36.78%)
-python task7_finetuning.py            # Task 7: Fine-tuning (best: 65.04%)
-python task8_visualization.py         # Task 8: t-SNE visualization
+# Task 1: Supervised Baseline (10% labels)
+python3 MSDS25069_05_task1_supervised.py
+
+# Task 2: Augmentation Visualization
+python3 MSDS25069_05_task2_augmentations.py
+
+# Task 3: Feature Similarity Before Training
+python3 MSDS25069_05_task3_similarity.py
+
+# Task 4+5: SimCLR Implementation & Pretraining (50 epochs)
+python3 MSDS25069_05_task4_simclr.py
+
+# Task 6: Linear Probe Evaluation
+python3 MSDS25069_05_task5_linear_probe.py
+
+# Task 7+8: Fine-tuning + t-SNE Visualization + metrics.json + test_predictions.csv
+python3 MSDS25069_05_task6_finetune.py
+```
+
+Or run everything via the combined file:
+
+```bash
+python MSDS25069_05_allCode.py --task all
 ```
 
 ---
 
-## 📊 Key Results
+## File Structure
 
-| Model | Test Accuracy |
-|-------|----------------|
-| Supervised Baseline (10% labels) | 59.00% |
-| Random Encoder (frozen) | 28.37% |
-| SimCLR Encoder (frozen) | 32.03% |
-| **SimCLR + Fine-tuning** | **65.04%** ✨ |
+```
+MSDS25069_05_task1_supervised.py     # Task 1: Supervised baseline
+MSDS25069_05_task2_augmentations.py  # Task 2: Augmentation pipeline
+MSDS25069_05_task3_similarity.py     # Task 3: Feature similarity (before training)
+MSDS25069_05_task4_simclr.py         # Task 4+5: SimCLR implementation & pretraining
+MSDS25069_05_task5_linear_probe.py   # Task 6: Linear probe evaluation
+MSDS25069_05_task6_finetune.py       # Task 7+8: Fine-tuning, t-SNE viz, metrics
+MSDS25069_05_allCode.py              # All code combined in one file
+models.py                           # Model architectures (ResNet-18, SimCLR)
+requirements.txt                    # Python dependencies
 
-**Key Improvements:**
-- SimCLR outperforms supervised baseline by **+6.04%**
-- Feature quality improved by **2.7×** (class separation ratio)
-- Validates self-supervised pretraining effectiveness
+utils/
+  dataset_splits.py                 # CIFAR-10 subset loading
+  seed.py                           # Random seed utility
+  metrics.py                        # Accuracy, confusion matrix helpers
+  visualization.py                  # Augmentation grid, PCA plots
+
+splits/
+  train_ssl_unlabeled.txt           # 45,000 unlabeled indices
+  train_labeled_10percent.txt       # 5,000 labeled indices
+  val.txt                           # 5,000 validation indices
+  test.txt                          # 10,000 test indices
+
+models/                             # Saved model checkpoints
+  supervised_model.pth              # Task 1 best model
+  simclr_encoder.pt                 # Task 5 encoder only
+  simclr_pretrained.pth             # Task 5 full SimCLR model
+  linear_probe.pt                   # Task 6 best linear probe
+  finetuned_model.pt                # Task 7 fine-tuned model
+
+graphs/
+  supervised_loss.png               # Task 1 loss curves
+  simclr_pretraining_loss.png       # Task 5 loss curve
+  linear_probe_accuracy.png         # Task 6 accuracy comparison
+  finetuning_accuracy.png           # Task 7 accuracy comparison
+
+results/
+  augmentation_examples.png         # Task 2 visualization
+  similarity_matrix_before_training.png  # Task 4 similarity heatmap
+  similarity_matrix_after_training.png   # Task 5 similarity heatmap
+  supervised_confusion_matrix.png   # Task 1 confusion matrix
+  random_encoder_pca_or_tsne.png    # Task 8 random encoder t-SNE
+  simclr_encoder_pca_or_tsne.png    # Task 8 SimCLR encoder t-SNE
+  finetuned_encoder_pca_or_tsne.png # Task 8 fine-tuned encoder t-SNE
+  metrics.json                      # Final metrics (all accuracies)
+  test_predictions.csv              # Test set predictions with probabilities
+```
 
 ---
 
-## ✅ Deliverables Checklist
+## Training Settings
 
-**Core Results:**
-- ✅ Supervised baseline model (test acc: 59.00%)
-- ✅ Augmentation pipeline visualization  
-- ✅ Feature similarity analysis
-- ✅ SimCLR implementation (NT-Xent loss)
-- ✅ Pretrained SimCLR model (test acc: 36.78%)
-- ✅ Fine-tuned model (test acc: 65.04%)
-- ✅ PCA/t-SNE visualizations
-
-**Outputs:**
-- Loss curves, confusion matrices, accuracy plots
-- JSON results for all tasks
-- Model checkpoints for supervised, pretrained, and fine-tuned versions
-
----
-
-## 📝 Assignment Info
-
-**Course:** Deep Learning - Spring 2026  
-**Student:** Sadam Hussain (MSDS25069)  
-**Document:** `DLSpring2026_Assignment5_SimCLR.docx.pdf`  
-**Random Seed:** 2026 (reproducibility)
+| Setting | Value |
+|---------|-------|
+| Dataset | CIFAR-10 |
+| Encoder | ResNet-18 (modified for CIFAR-10) |
+| Batch size | 64 |
+| SimCLR epochs | 50 |
+| Linear probe epochs | 20 |
+| Fine-tuning epochs | 20 |
+| Optimizer | Adam |
+| Learning rate | 3e-4 |
+| Temperature | 0.5 |
+| Random seed | 2026 |
